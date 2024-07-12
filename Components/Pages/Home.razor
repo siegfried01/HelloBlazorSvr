@@ -1,7 +1,30 @@
 ﻿@page "/"
-
+@rendermode InteractiveServer
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
+<p>
+@builtAt
+</p>
+<p>
+Welcome to your new app. Date time = @DateTime.Now.ToString("ddd MMM dd, yyyy hh:mm:ss.fff tt (zzz)") </p>
 
-Welcome to your new app. Date time = @DateTime.Now.ToString("ddd MMM dd, yyyy hh:mm:ss.fff tt (zzz)")
+<table border="1">
+    <thead>
+    </thead>
+    <tbody>
+        <tr>
+            <td><button class="button" @onclick="GetCurrentDateTime">Get Date Time</button> </td>
+            <td><InputText @bind-Value=@currentDateTime size="50" /></td>
+        </tr>
+    </tbody>
+</table>
+
+@code {
+    string builtAt = "Built at Fri Jul 12 14:05:04 2024";
+    string currentDateTime = "";
+    void GetCurrentDateTime()
+    {
+        currentDateTime = DateTime.Now.ToString("ddd MMM dd, yyyy hh:mm:ss.fff tt (zzz)");
+    }
+}
