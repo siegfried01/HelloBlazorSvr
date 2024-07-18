@@ -167,7 +167,7 @@ EOF
    az webapp deploy --async false --clean true --name $env:webAppName --resource-group $env:rg --restart true --src-url '$env:sasUrl' --type zip
    End commands to deploy this file using Azure CLI with PowerShell
 
-   Step 15 generate blob SAS and deploy using bicep. Skip this for now it does not work
+   Output: Step 15 generate blob SAS and deploy using bicep. Skip this for now it does not work
    az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name  -c mycontainer -n package.zip --https-only --output tsv
    az webapp deploy --async false --clean true --name ilmqt-webapp --resource-group rg_UpdateHelloBlazorSvrZipDeploy --restart true --src-url https://ilmqtblobstg.blob.core.windows.net/mycontainer/package.zip?se=2024-07-16T10%3A26%3A29Z&sp=racwdxtmei&spr=https&sv=2022-11-02&sr=b&sig=P3Wt0vP9lHhSIB0mR%2BKW2phPdlNcb1yrEBStGYFgZ1k%3D --type zip
    ERROR: Deployment type is mandatory when deploying from URLs. Use --type
