@@ -105,7 +105,6 @@ EOF
    az storage blob upload -f publish-webapp.zip --account-name $env:blobstg  -c $env:stgContainer -n $env:package_zip --overwrite true  --connection-string $env:conn
    End commands to deploy this file using Azure CLI with PowerShell
 
-   
    Output from Step 11 upload zip to blob
    az storage blob upload -f publish-webapp.zip --account-name   -c mycontainer -n package.zip --overwrite true  --connection-string "REDACTED"
    Alive[################################################################]  100.0000%
@@ -130,10 +129,50 @@ EOF
    ilmqtwebstg   StorageV2  Microsoft.Storage/storageAccounts  westus2
    all done 07/16/2024 09:00:02
 
-
    emacs ESC 12 F10
    Begin commands to deploy this file using Azure CLI with PowerShell
-   write-output "Step 12 generate blob SAS and deploy using bicep. Skip this for now it does not work"
+   write-output "step 12 deploy plan for helloworld .. this is redundant with the bicep code"
+   write-output "az appservice plan create -g $env:rg -n $env:uniquePrefix-plan-webapp --sku F1 -l $env:location"
+   az appservice plan create -g $env:rg -n $env:uniquePrefix-plan-webapp --sku F1 -l $env:location
+   End commands to deploy this file using Azure CLI with PowerShell
+
+   emacs ESC 13 F10
+   Begin commands to deploy this file using Azure CLI with PowerShell
+   write-output "step 13 create webapp helloworld .. this is redundant with the bicep code"
+   write-output "az webapp create --name '$($env:webAppName)' --resource-group $env:rg --plan $env:uniquePrefix-plan-webapp --runtime `"dotnet:8`""
+   az webapp create --name $env:webAppName --resource-group $env:rg --plan $env:uniquePrefix-plan-webapp --runtime "dotnet:8"
+   End commands to deploy this file using Azure CLI with PowerShell
+
+   emacs ESC 14 F10 uploaod using "az webapp deploy": this is broken
+   Begin commands to deploy this file using Azure CLI with PowerShell
+   write-output "Step 14 generate blob SAS and deploy using using az webapp deploy"
+   $env:conn=(az storage account show-connection-string --name $env:blobstg --resource-group $env:rg | jq '.connectionString')
+   write-output "az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name $($env:blobstg) -c $env:stgContainer -n $($env:package_zip) --https-only --output tsv"
+   $env:sasUrl=(az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString("yyyy-MM-ddTHH:mm:ssZ") --account-name $env:blobstg -c $env:stgContainer -n $env:package_zip  --connection-string $env:conn --https-only --output tsv)
+   write-output "az webapp deploy --async false --clean true --name $($env:webAppName) --resource-group $($env:rg) --restart true --src-url env:sasUrl --type zip"
+   az webapp deploy --async false --clean true --name $env:webAppName --resource-group $env:rg --restart true --src-url '$env:sasUrl' --type zip
+   End commands to deploy this file using Azure CLI with PowerShell
+
+   Output: Step 14 generate blob SAS and deploy using using az webapp deploy
+   az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name ilmqtblobstg -c mycontainer -n package.zip --https-only --output tsv
+   az webapp deploy --async false --clean true --name ilmqt-webapp --resource-group rg_UpdateHelloBlazorSvrZipDeploy --restart true --src-url env:sasUrl --type zip
+   WARNING: Initiating deployment
+   WARNING: Deploying from URL: $env:sasUrl
+   ERROR: Bad Request({"error":{"code":"BadRequest","message":"System.ArgumentException: Invalid '$env:sasUrl' packageUri in the JSON request\r\n   at Kudu.Services.Deployment.PushDeploymentController.<PushDeployAsync>d__16.MoveNext() in C:\\__w\\1\\s\\Kudu.Services\\Deployment\\PushDeploymentController.cs:line 474"}})
+   resource group rg_UpdateHelloBlazorSvrZipDeploy
+   Name               Flavor     ResourceType                       Region
+   -----------------  ---------  ---------------------------------  --------
+   ilmqtblobstg       StorageV2  Microsoft.Storage/storageAccounts  westus2
+   ilmqtwebstg        StorageV2  Microsoft.Storage/storageAccounts  westus2
+   ilmqt-plan-webapp  app        Microsoft.Web/serverFarms          westus2
+   ilmqt-webapp       app        Microsoft.Web/sites                westus2
+   all done 07/18/2024 04:50:56
+   
+   Process compilation finished
+
+   emacs ESC 15 F10 upload using bicep zipdeploy: this is  broken
+   Begin commands to deploy this file using Azure CLI with PowerShell
+   write-output "Step 15 generate blob SAS and deploy using bicep. Skip this for now it does not work"
    $env:conn=(az storage account show-connection-string --name $env:blobstg --resource-group $env:rg | jq '.connectionString')
    write-output "az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name $($env:blobstg) -c $env:stgContainer -n $($env:package_zip) --https-only --output tsv"
    $env:sasUrl=(az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString("yyyy-MM-ddTHH:mm:ssZ") --account-name $env:blobstg -c $env:stgContainer -n $env:package_zip  --connection-string $env:conn --https-only --output tsv)
@@ -143,44 +182,41 @@ EOF
    az deployment group create --name $env:name --resource-group $env:rg --mode Incremental --template-file  "deploy-UpdateFunctionZipDeploy.bicep" --parameters "{'packageUri': {'value': '$env:sasUrl'}}" "{'functionAppName': {'value': '$env:functionAppName'}}" | ForEach-Object { $_ -replace "`r", ""}
    End commands to deploy this file using Azure CLI with PowerShell
 
-   emacs ESC 13 F10
+   emacs ESC 16 F10 upload with az webapp deployment source config-zip: this is broken
    Begin commands to deploy this file using Azure CLI with PowerShell
-   write-output "step 13 deploy plan for helloworld .. this is redundant with the bicep code"
-   write-output "az appservice plan create -g $env:rg -n $env:uniquePrefix-plan-webapp --sku F1 -l $env:location"
-   az appservice plan create -g $env:rg -n $env:uniquePrefix-plan-webapp --sku F1 -l $env:location
+   write-output "step 16 use `"az webapp deployment source config-zip`" to deploy compiled #C code deployment to azure resource (skip this and do with with the zip deploy instead)"
+   write-output "az functionapp deployment source config-zip -g $env:rg -n $env:webAppName --src ./publish-webapp.zip"
+   az webapp deployment source config-zip -g $env:rg -n $env:webAppName --src ./publish-webapp.zip
    End commands to deploy this file using Azure CLI with PowerShell
 
-   emacs ESC 14 F10
-   Begin commands to deploy this file using Azure CLI with PowerShell
-   write-output "step 14 create webapp helloworld .. this is redundant with the bicep code"
-   write-output "az webapp create --name '$($env:webAppName)' --resource-group $env:rg --plan $env:uniquePrefix-plan-webapp"
-   az webapp create --name $env:webAppName --resource-group $env:rg --plan $env:uniquePrefix-plan-webapp
-   End commands to deploy this file using Azure CLI with PowerShell
-
-   emacs ESC 15 F10
-   Begin commands to deploy this file using Azure CLI with PowerShell
-   write-output "Step 15 generate blob SAS and deploy using using az webapp deploy"
-   $env:conn=(az storage account show-connection-string --name $env:blobstg --resource-group $env:rg | jq '.connectionString')
-   write-output "az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name $($env:blobstg) -c $env:stgContainer -n $($env:package_zip) --https-only --output tsv"
-   $env:sasUrl=(az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString("yyyy-MM-ddTHH:mm:ssZ") --account-name $env:blobstg -c $env:stgContainer -n $env:package_zip  --connection-string $env:conn --https-only --output tsv)
-   write-output "az webapp deploy --async false --clean true --name $($env:webAppName) --resource-group $($env:rg) --restart true --src-url env:sasUrl --type zip"
-   az webapp deploy --async false --clean true --name $env:webAppName --resource-group $env:rg --restart true --src-url '$env:sasUrl' --type zip
-   End commands to deploy this file using Azure CLI with PowerShell
-
-   Output: Step 15 generate blob SAS and deploy using bicep. Skip this for now it does not work
-   az storage blob generate-sas --full-uri --permissions acdeimrtwx --expiry (get-date).AddMinutes(60).ToString('yyyy-MM-ddTHH:mm:ssZ') --account-name  -c mycontainer -n package.zip --https-only --output tsv
-   az webapp deploy --async false --clean true --name ilmqt-webapp --resource-group rg_UpdateHelloBlazorSvrZipDeploy --restart true --src-url https://ilmqtblobstg.blob.core.windows.net/mycontainer/package.zip?se=2024-07-16T10%3A26%3A29Z&sp=racwdxtmei&spr=https&sv=2022-11-02&sr=b&sig=P3Wt0vP9lHhSIB0mR%2BKW2phPdlNcb1yrEBStGYFgZ1k%3D --type zip
-   ERROR: Deployment type is mandatory when deploying from URLs. Use --type
-   'sp' is not recognized as an internal or external command,
-   operable program or batch file.
-   'spr' is not recognized as an internal or external command,
-   operable program or batch file.
-   'sv' is not recognized as an internal or external command,
-   operable program or batch file.
-   'sr' is not recognized as an internal or external command,
-   operable program or batch file.
-   'sig' is not recognized as an internal or external command,
-   operable program or batch file.
+   Output: step 16 us "az webapp deployment source config-zipg" to deploy compiled #C code deployment to azure resource (skip this and do with with the zip deploy instead)
+   az functionapp deployment source config-zip -g rg_UpdateHelloBlazorSvrZipDeploy -n ilmqt-webapp --src ./publish-webapp.zip
+   WARNING: This command has been deprecated and will be removed in a future release. Use 'az webapp deploy' instead.
+   WARNING: Getting scm site credentials for zip deployment
+   WARNING: Starting zip deployment. This operation can take a while to complete ...
+   WARNING: Deployment endpoint responded with status code 202
+   {
+     "active": true,
+     "author": "N/A",
+     "author_email": "N/A",
+     "complete": true,
+     "deployer": "ZipDeploy",
+     "end_time": "2024-07-18T11:58:10.1536103Z",
+     "id": "3d82781425074ebca44228ab710581b0",
+     "is_readonly": true,
+     "is_temp": false,
+     "last_success_end_time": "2024-07-18T11:58:10.1536103Z",
+     "log_url": "https://ilmqt-webapp.scm.azurewebsites.net/api/deployments/latest/log",
+     "message": "Created via a push deployment",
+     "progress": "",
+     "provisioningState": "Succeeded",
+     "received_time": "2024-07-18T11:58:06.8648658Z",
+     "site_name": "ilmqt-webapp",
+     "start_time": "2024-07-18T11:58:06.9586203Z",
+     "status": 4,
+     "status_text": "",
+     "url": "https://ilmqt-webapp.scm.azurewebsites.net/api/deployments/latest"
+   }
    resource group rg_UpdateHelloBlazorSvrZipDeploy
    Name               Flavor     ResourceType                       Region
    -----------------  ---------  ---------------------------------  --------
@@ -188,17 +224,18 @@ EOF
    ilmqtwebstg        StorageV2  Microsoft.Storage/storageAccounts  westus2
    ilmqt-plan-webapp  app        Microsoft.Web/serverFarms          westus2
    ilmqt-webapp       app        Microsoft.Web/sites                westus2
-   all done 07/16/2024 09:26:33
+   all done 07/18/2024 04:58:14
 
 
+   HTTP Error 500.32 - ANCM Failed to Load dll
+   Common solutions to this issue:
+   The application was likely published for a different bitness than w3wp.exe/iisexpress.exe is running as.
+   Troubleshooting steps:
+   Check the system event log for error messages
+   Enable logging the application process' stdout messages
+   Attach a debugger to the application process and inspect
+   For more information visit: https://go.microsoft.com/fwlink/?LinkID=2028526   
 
-
-   emacs ESC 16 F10
-   Begin commands to deploy this file using Azure CLI with PowerShell
-   write-output "step 16 deploy compiled #C code deployment to azure resource (skip this and do with with the zip deploy instead)"
-   write-output "az functionapp deployment source config-zip -g $env:rg -n $env:webAppName --src ./publish-webapp.zip"
-   az webapp deployment source config-zip -g $env:rg -n $env:webAppName --src ./publish-webapp.zip
-   End commands to deploy this file using Azure CLI with PowerShell
 
    see also: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#azure-service-bus-data-receiver
 
@@ -371,6 +408,13 @@ EOF
    write-output "Step 30 delete storage account"
    write-output "az storage account delete -n $($env:storageAccountName) -g $env:rg --yes"
    az storage account delete -n $env:storageAccountName -g $env:rg --yes
+   End commands to deploy this file using Azure CLI with PowerShell
+
+   emacs ESC 31 F10
+   Begin commands to deploy this file using Azure CLI with PowerShell
+   write-output "Step 31 delete storage account"
+   write-output "az webapp delete -n $($env:webAppName) -g $($env:rg)"
+   az webapp delete -n $env:webAppName -g $env:rg
    End commands to deploy this file using Azure CLI with PowerShell
 
    Begin common epilog commands
